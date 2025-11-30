@@ -27,6 +27,11 @@ const testQuestions = [
 {id:15,text:"你自我反思的频率如何？"}
 ];
 
+// 动态获取后端 URL（本地开发或 Vercel 部署）
+const API_URL = window.location.hostname === "localhost"
+? "[http://localhost:3000/chat](http://localhost:3000/chat)"
+: `${window.location.origin}/chat`;
+
 function addMessage(role, text){
 const el = document.createElement("div");
 el.className = "message " + (role === "user" ? "user" : "bot");
@@ -37,7 +42,7 @@ chatBox.scrollTop = chatBox.scrollHeight;
 
 async function fetchChat(messages){
 try{
-const res = await fetch("[http://localhost:3000/chat](http://localhost:3000/chat)", {
+const res = await fetch(API_URL, {
 method:"POST",
 headers: {"Content-Type":"application/json"},
 body: JSON.stringify({messages})
@@ -99,7 +104,7 @@ const prompt = `
   if(testMode){
   const score = Number(text);
   if(![1,2,3,4,5].includes(score)){
-  return addMessage("bot", lang==="ko"?"请输入1~5数字":"1~5 사이 숫자를 입력해주세요");
+  return addMessage("bot", lang==="ko"?"请输入1~5数字":"1~5 점 숫자만 입력해주세요");
   }
   answers.push(score);
   currentQuestion++;
