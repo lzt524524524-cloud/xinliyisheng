@@ -27,11 +27,6 @@ const testQuestions = [
 {id:15,text:"你自我反思的频率如何？"}
 ];
 
-// 动态获取后端 URL（本地开发或 Vercel 部署）
-const API_URL = window.location.hostname === "localhost"
-? "[http://localhost:3000/chat](http://localhost:3000/chat)"
-: `${window.location.origin}/chat`;
-
 function addMessage(role, text){
 const el = document.createElement("div");
 el.className = "message " + (role === "user" ? "user" : "bot");
@@ -42,7 +37,7 @@ chatBox.scrollTop = chatBox.scrollHeight;
 
 async function fetchChat(messages){
 try{
-const res = await fetch(API_URL, {
+const res = await fetch("/chat", {
 method:"POST",
 headers: {"Content-Type":"application/json"},
 body: JSON.stringify({messages})
@@ -91,7 +86,7 @@ const prompt = `
   testMode = true;
   answers = [];
   currentQuestion = 0;
-  addMessage("bot", lang==="ko"?"测试开始! 每题1~5分":"테스트 시작! 각 문항 1~5점");
+  addMessage("bot", lang==="ko"?"테스트 시작! 각 문항 1~5점":"测试开始! 每题1~5分");
   askNextQuestion();
   });
 
@@ -99,33 +94,33 @@ const prompt = `
   const text = input.value.trim();
   if(!text) return;
   addMessage("user", text);
-  input.value="";
-
+  input.value = "";
+  conversation.push({role:"user", content:text});
   if(testMode){
-  const score = Number(text);
-  if(![1,2,3,4,5].includes(score)){
-  return addMessage("bot", lang==="ko"?"请输入1~5数字":"1~5 점 숫자만 입력해주세요");
-  }
-  answers.push(score);
-  currentQuestion++;
-  askNextQuestion();
+  const num = parseInt(text);
+  if(isNaN(num) || num<1 || num>5){
+  addMessage("bot", lang==="ko"?"请输入1~5之间的数字":"请输入1~5的数字");
   return;
   }
-
-  const data = await fetchChat([...conversation,{role:"user",content:text}]);
-  addMessage("bot", data.reply || (lang==="ko"?"无响应":"응답 없음"));
-  conversation.push({role:"user", content:text});
-  conversation.push({role:"assistant", content:data.reply || ""});
+  answers.push(num);
+  currentQuestion++;
+  askNextQuestion();
+  } else {
+  const data = await fetchChat(conversation);
+  const reply = data.reply || (lang==="ko"?"응답 생성 실패":"回复生成失败");
+  addMessage("bot", reply);
+  conversation.push({role:"assistant", content:reply});
+  }
   }
 
-  input.addEventListener("keypress", e => { if(e.key==="Enter") sendMessage(); });
   sendBtn.addEventListener("click", sendMessage);
+  input.addEventListener("keypress", e=>{
+  if(e.key==="Enter") sendMessage();
+  });
 
-  langBtn.addEventListener("click", () => {
-  lang = lang === "ko" ? "zh" : "ko";
-  headerTitle.innerText = lang === "ko" ? "心理咨询 AI" : "심리 상담 AI";
-  input.placeholder = lang === "ko" ? "请输入消息…" : "메시지를 입력해주세요…";
-  addMessage("bot", lang === "ko" ? "语言已切换中文" : "언어가 한국어로 변경되었습니다");
+  langBtn.addEventListener("click", ()=>{
+  lang = lang==="ko"?"cn":"ko";
+  headerTitle.innerText = lang==="ko"?"심리 상담 AI":"心理咨询 AI";
   });
 
 });
